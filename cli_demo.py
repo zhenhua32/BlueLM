@@ -5,7 +5,11 @@ import readline
 from transformers import AutoTokenizer, AutoModelForCausalLM, TextStreamer
 
 DEVICE = "cuda:0"
-MODEL_ID = "vivo-ai/BlueLM-7B-Chat"
+# MODEL_ID = "vivo-ai/BlueLM-7B-Chat"
+if os.name == "nt":
+    MODEL_ID = r"G:\code\pretrain_model_dir\_modelscope\vivo-ai\BlueLM-7B-Chat-32K"
+else:
+    MODEL_ID = "/home/pretrain_model_dir/_modelscope/vivo-ai/BlueLM-7B-Chat-32K"
 MAX_NEW_TOKENS = 512
 REPETITION_PENALTY = 1.1
 

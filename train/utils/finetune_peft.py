@@ -22,6 +22,7 @@ from peft import (
 )
 
 def get_peft_config(args):
+    """获取 lora 配置"""
     return LoraConfig(
             task_type=TaskType.CAUSAL_LM, inference_mode=False,
             r=args.lora_rank,
@@ -30,5 +31,6 @@ def get_peft_config(args):
         )
 
 def get_peft_lora_model(model, args):
+    """加载 lora 模型"""
     peft_config = get_peft_config(args)
     return get_peft_model(model, peft_config)

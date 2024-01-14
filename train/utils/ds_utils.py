@@ -22,6 +22,9 @@ def get_train_ds_config(stage=1,
                         pin_parameters=True,
                         tp_gather_partition_size=8,
                         max_out_tokens=512):
+    """
+    获取 DeepSpeed 训练配置
+    """
     zero_opt_dict = {
         "stage": stage,
         "allgather_partitions": True,

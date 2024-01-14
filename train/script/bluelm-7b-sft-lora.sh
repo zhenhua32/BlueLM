@@ -1,7 +1,13 @@
 LR=1e-5
 
-OUTPUT_PATH=<PATH-TO-OUTPUT>
-MODEL_PATH=<PATH-TO-MODEL>
+# 获取脚本所在目录
+SCRIPT_DIR=$(cd $(dirname $0); pwd)
+# 根目录是脚本目录的上一级
+ROOT_DIR=$(dirname $SCRIPT_DIR)
+echo "root_dir is $ROOT_DIR"
+
+OUTPUT_PATH=$ROOT_DIR/output/bluelm-7b-sft-lora
+MODEL_PATH="/home/pretrain_model_dir/_modelscope/vivo-ai/BlueLM-7B-Chat"
 
 # OUTPUT
 MODEL_OUTPUT_PATH=$OUTPUT_PATH/model
@@ -14,9 +20,13 @@ mkdir -p $TENSORBOARD_PATH
 
 MASTER_PORT=$(shuf -n 1 -i 10000-65535)
 
+echo "master port is $MASTER_PORT"
+
+    # --deepspeed \
+    # --train_file "./data/bella_train_demo.json" \
+
 deepspeed --num_gpus=1 --master_port $MASTER_PORT main.py \
-    --deepspeed \
-    --train_file "./data/bella_train_demo.json" \
+    --train_file "./data/bella_dev_demo.json" \
     --prompt_column inputs \
     --response_column targets \
     --model_name_or_path $MODEL_PATH \
@@ -30,5 +40,5 @@ deepspeed --num_gpus=1 --master_port $MASTER_PORT main.py \
     --save_steps 4500 \
     --learning_rate $LR \
     --finetune \
-    --lora_rank 32 \
-    &> $LOG_OUTPUT_PATH/training.log
+    --lora_rank 8 \
+    | tee $LOG_OUTPUT_PATH/training.log

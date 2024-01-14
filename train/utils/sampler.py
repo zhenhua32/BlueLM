@@ -22,6 +22,10 @@ import torch.distributed as dist
 
 
 class DistributedSampler(Sampler):
+    """
+    不知道改了哪些地方
+    """
+
     def __init__(self, dataset, num_replicas=None, rank=None, shuffle=True, batch_size=1,
                  start_step=0, swap_length=0, seed=0):
         if num_replicas is None:

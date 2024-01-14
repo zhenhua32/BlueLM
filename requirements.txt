@@ -11,3 +11,4 @@ timm
 bitsandbytes
 streamlit
 scipy
+flash-attn

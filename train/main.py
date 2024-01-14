@@ -101,6 +101,10 @@ def train(args, model, train_dataloader,
 
 
 def main():
+    """
+    整体训练的流程
+    """
+    # 解析参数
     args = parse_args()
     init_distributed_mode(args)
 
@@ -111,19 +115,21 @@ def main():
     # Set seed before initializing model.
     set_seed(args.seed)
 
+    # 更新参数中的 seq_len
     config = AutoConfig.from_pretrained(args.model_name_or_path, trust_remote_code=True)
     config.seq_len = args.seq_len
 
     # initialize tokenizer and model
     logger.info("Start initializing tokenizer and model ...")
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path, trust_remote_code=True, use_fast=False)
-    model = AutoModelForCausalLM.from_pretrained(args.model_name_or_path, config=config, trust_remote_code=True)
+    model = AutoModelForCausalLM.from_pretrained(args.model_name_or_path, config=config, trust_remote_code=True, dtype=torch.float16)
     logger.info("Finish initializing tokenizer and model ...")
 
     # enable gradient checkpointing
     if args.gradient_checkpointing:
         model.gradient_checkpointing_enable()
 
+    # 加载 lora 模型
     if args.lora_rank is not None:
         model = get_peft_lora_model(model, args)
         logger.info("Load model in lora mode")
@@ -133,8 +139,9 @@ def main():
     else:
         log_writer = None
 
-    # build data loader
+    # build data loader 初始化数据加载器
     train_dataloader = build_loader(tokenizer, args, logger=logger)
+    logger.info("Finish Load train_dataloader")
 
     if hasattr(args, 'max_steps') and args.max_steps > 0:
         args.start_epoch = 0
@@ -143,6 +150,7 @@ def main():
         args.start_step = 0
         args.max_steps = args.epochs * len(train_dataloader)
 
+    # 初始化模型, 优化器, 学习率调度器
     if args.deepspeed:
         if hasattr(args, "deepspeed_config") and args.deepspeed_config != None:
             ds_config = json.load(open(args.deepspeed_config, 'r', encoding='utf-8'))
@@ -166,7 +174,9 @@ def main():
             dist_init_required=True
         )
     else:
+        # 先看下不使用 deepspeed 的情况
         model.cuda()
+        logger.info(f"model dtype: {model.dtype}, deivce: {model.device}")
         parameters = model.parameters()
         optimizer = AdamW(parameters, lr=args.learning_rate, betas=(0.9, 0.95))
         lr_scheduler = CosineAnnealingLR(optimizer, args.max_steps)
@@ -175,6 +185,9 @@ def main():
                                                               find_unused_parameters=True)
             model._set_static_graph()
 
+    logger.info("Finish Load model and optimizer")
+
+    # 开始训练
     train(args, model, train_dataloader, optimizer, lr_scheduler, log_writer=log_writer,
           logger=logger)
 

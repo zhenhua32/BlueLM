@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import torch
+from tqdm import tqdm
 
 from torch.utils.data import DataLoader, TensorDataset
 from utils.sampler import DistributedSampler
@@ -22,6 +23,9 @@ from datasets import load_dataset
 
 
 def build_loader(tokenizer, args, logger=None):
+    """
+    加载数据
+    """
     data_files = {}
     if args.train_file is not None:
         data_files["train"] = args.train_file
@@ -33,26 +37,33 @@ def build_loader(tokenizer, args, logger=None):
         cache_dir=args.cache_dir,
     )
 
+    # 输入列和输出列
     prompt_column = args.prompt_column
     response_column = args.response_column
 
     def preprocess_data_function(examples):
+        """处理数据"""
+        # 总长度是输入的长度加上输出的长度
         max_seq_length = args.max_source_length + args.max_target_length
         all_input_ids = []
         all_labels = []
-        for i in range(len(examples[prompt_column])):
+        for i in tqdm(range(len(examples[prompt_column]))):
             if examples[prompt_column][i] and examples[response_column][i]:
                 query, answer = examples[prompt_column][i], examples[response_column][i]
 
+                # 转换成 ids
                 a_ids = tokenizer.encode(text=query, truncation=True,
                                          max_length=args.max_source_length - 1)
                 b_ids = tokenizer.encode(text=answer, truncation=True,
                                          max_length=args.max_target_length - 1)
                 context_length = len(a_ids)
+                # 在最前面加上 bos，最后面加上 eos
                 input_ids = [tokenizer.bos_token_id] + a_ids + b_ids + [tokenizer.eos_token_id]
                 labels = [tokenizer.bos_token_id] + a_ids + b_ids + [tokenizer.eos_token_id]
                 if args.finetune:
+                    # 如果是微调, 需要更新标签.
                     labels = [-100] * (context_length + 1) + b_ids + [tokenizer.eos_token_id]
+                # 计算需要填充的长度, 然后在右侧填充 pad_id. 并且更新 labels
                 pad_len = max_seq_length - len(input_ids)
                 input_ids = input_ids + [tokenizer.pad_token_id] * pad_len
                 labels = labels + [-100] * pad_len
@@ -65,6 +76,7 @@ def build_loader(tokenizer, args, logger=None):
 
         return TensorDataset(all_input_ids, all_labels)
 
+    # 获取训练数据集
     train_dataset = raw_datasets["train"]
     dataset = preprocess_data_function(train_dataset)
 
