@@ -122,7 +122,7 @@ def main():
     # initialize tokenizer and model
     logger.info("Start initializing tokenizer and model ...")
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path, trust_remote_code=True, use_fast=False)
-    model = AutoModelForCausalLM.from_pretrained(args.model_name_or_path, config=config, trust_remote_code=True, dtype=torch.float16)
+    model = AutoModelForCausalLM.from_pretrained(args.model_name_or_path, config=config, trust_remote_code=True, torch_dtype=torch.float16)
     logger.info("Finish initializing tokenizer and model ...")
 
     # enable gradient checkpointing
@@ -165,6 +165,7 @@ def main():
                               lr=args.learning_rate,
                               betas=(0.9, 0.95))
         lr_scheduler = CosineAnnealingLR(optimizer, args.max_steps)
+        logger.info("Start initializing deepspeed")
         model, optimizer, _, _ = deepspeed.initialize(
             model=model,
             optimizer=optimizer,
@@ -173,6 +174,7 @@ def main():
             lr_scheduler=lr_scheduler,
             dist_init_required=True
         )
+        logger.info("Finish initializing deepspeed")
     else:
         # 先看下不使用 deepspeed 的情况
         model.cuda()

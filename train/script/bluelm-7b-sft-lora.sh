@@ -26,6 +26,7 @@ echo "master port is $MASTER_PORT"
     # --train_file "./data/bella_train_demo.json" \
 
 deepspeed --num_gpus=1 --master_port $MASTER_PORT main.py \
+    --deepspeed \
     --train_file "./data/bella_dev_demo.json" \
     --prompt_column inputs \
     --response_column targets \
@@ -37,7 +38,7 @@ deepspeed --num_gpus=1 --master_port $MASTER_PORT main.py \
     --gradient_accumulation_steps 1 \
     --gradient_checkpointing \
     --max_steps 9000 \
-    --save_steps 4500 \
+    --save_steps 1000 \
     --learning_rate $LR \
     --finetune \
     --lora_rank 8 \
