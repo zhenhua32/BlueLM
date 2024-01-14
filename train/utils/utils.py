@@ -28,6 +28,9 @@ def get_optimizer_grouped_parameters(
         no_decay_name_list=["bias", "LayerNorm.weight"],
         lora_name_list=["lora_right_weight", "lora_left_weight"],
 ):
+    """
+    获取优化器参数配置
+    """
     optimizer_grouped_parameters = [
         {
             "params": [
@@ -67,6 +70,7 @@ def get_optimizer_grouped_parameters(
 
 
 def to_device(batch):
+    """移动到 GPU 上"""
     if torch.is_tensor(batch):
         return batch.cuda(non_blocking=True)
     if isinstance(batch, list):
@@ -82,6 +86,7 @@ def to_device(batch):
 
 
 def to_half(batch):
+    """转换为半精度"""
     if torch.is_tensor(batch):
         if torch.is_floating_point(batch):
             return batch.half()
@@ -100,6 +105,7 @@ def to_half(batch):
 
 
 def to_bf16(batch):
+    """转换为 bf16"""
     if torch.is_tensor(batch):
         if torch.is_floating_point(batch):
             return batch.bfloat16()
@@ -124,6 +130,7 @@ def setup_for_distributed(is_master):
     import builtins as __builtin__
     builtin_print = __builtin__.print
 
+    # 原来如此, 就是重写 print 函数
     def print(*args, **kwargs):
         force = kwargs.pop('force', False)
         if is_master or force:
@@ -133,6 +140,7 @@ def setup_for_distributed(is_master):
 
 
 def init_distributed_mode(args):
+    """初始化分布式模式"""
     if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
         args.rank = int(os.environ["RANK"])
         args.local_rank = int(os.environ['LOCAL_RANK'])
@@ -159,6 +167,7 @@ def init_distributed_mode(args):
     return
 
 class AmpScaler:
+    """A wrapper around torch.cuda.amp.GradScaler to support gradient accumulation"""
     state_dict_key = "amp_scaler"
 
     def __init__(self):

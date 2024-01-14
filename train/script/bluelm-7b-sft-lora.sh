@@ -35,7 +35,7 @@ deepspeed --num_gpus=1 --master_port $MASTER_PORT main.py \
     --tensorboard_dir $TENSORBOARD_PATH \
     --seq_len 2048 \
     --batch_size_per_device 1 \
-    --gradient_accumulation_steps 1 \
+    --gradient_accumulation_steps 8 \
     --gradient_checkpointing \
     --max_steps 9000 \
     --save_steps 1000 \
